@@ -30,3 +30,11 @@ input {
 img {
   margin-bottom: 1rem;
 }
+
+ol span {
+  font-weight: 700;
+}
+
+ol li {
+  margin-top: 1rem;
+}

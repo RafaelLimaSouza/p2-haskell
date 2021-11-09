@@ -30,11 +30,11 @@ caixas = el "div" $ do
 menu :: DomBuilder t m => m ()
 menu = do
       el "div" $ do
-          el "ul" $ do
-              el "li" (text "Item 1")
-              el "li" (text "Item 2")
-              el "li" (text "Item 3")
-              el "li" (text "Item 4")
+          el "ol" $ do
+              el "span" (text "Integrantes: ")
+              el "li" (text "Lucas Vasques")
+              el "li" (text "Rafael Lima")
+              el "li" (text "Wellinton Bispo")
 
 
 -- This runs in a monad that can be run on the client or the server.
@@ -49,9 +49,12 @@ frontend = Frontend
                          <> "rel" =: "stylesheet") blank
   , _frontend_body = do
       el "h1" $ text "Trabalho P2"
+      menu
+
       caixas
+
       elAttr "div" ("class" =: "line") (text "")
-      el "h3" $ text "Integrantes: Lucas Vasques, Rafael Lima, Wellington Bispo"
+
       el "p" $ text $ T.pack commonStuff
 
       -- `prerender` and `prerender_` let you choose a widget to run on the server
