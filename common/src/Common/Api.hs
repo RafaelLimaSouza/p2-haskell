@@ -1,4 +1,4 @@
 module Common.Api where
 
 commonStuff :: String
-commonStuff = "Here is a string defined in Common.Api"
+commonStuff = "Integrantes: Lucas Vasques | Rafael Lima | Wellington Bispo    #Common.Api"
