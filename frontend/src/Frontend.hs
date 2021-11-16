@@ -16,16 +16,40 @@ import Obelisk.Generated.Static
 
 import Reflex.Dom.Core
 
+import Data.Map (Map)
+import Data.Maybe
+import Text.Read
+
 import Common.Api
 import Common.Route
 
+caixaSoma :: (PostBuild t m, DomBuilder t m) => m()
+caixaSoma = do
+    n1 <- numberInput --m (Dynamic t Double)
+    text " "
+    n2 <- numberInput --m (Dynamic t Double)
+    dynText (fmap (T.pack . show) (zipDynWith (+) n1 n2))
+
+
+numberInput :: DomBuilder t m => m (Dynamic t Double)
+numberInput = do
+      n <- inputElement $ def
+        & inputElementConfig_initialValue .~ "0"
+        & inputElementConfig_elementConfig
+        . elementConfig_initialAttributes .~ ("type" =: "number")
+      return $ fmap (fromMaybe 0 . readMaybe . T.unpack)
+                  (_inputElement_value n)
+
+listaAttr :: Map T.Text T.Text
+listaAttr = "class" =: "class1" <> "id" =: "li2"
+
 caixas :: (DomBuilder t m, PostBuild t m) => m ()
 caixas = el "div" $ do
-  t <- inputElement def
-  s <- inputElement def
+  t <- inputElement def -- Dynamic Text
+  s <- inputElement def -- Dynamic Text
   text " "
-  dynText (zipDynWith (<>) (_inputElement_value t)
-                            (_inputElement_value s) )
+  dynText $ zipDynWith (<>) (_inputElement_value t)
+                            (_inputElement_value s)
 
 menu :: DomBuilder t m => m ()
 menu = do
@@ -35,11 +59,10 @@ menu = do
               el "li" (text "Lucas Vasques")
               el "li" (text "Rafael Lima")
               el "li" (text "Wellinton Bispo")
+              elAttr "li" 
+                      listaAttr 
+                      (text "Item de função")
 
-
--- This runs in a monad that can be run on the client or the server.
--- To run code in a pure client or pure server context, use one of the
--- `prerender` functions.
 frontend :: Frontend (R FrontendRoute)
 frontend = Frontend
   { _frontend_head = do
@@ -49,13 +72,7 @@ frontend = Frontend
                          <> "rel" =: "stylesheet") blank
   , _frontend_body = do
       el "h1" $ text "Trabalho P2"
-      menu
-
-      caixas
-
-      elAttr "div" ("class" =: "line") (text "")
-
-      el "p" $ text $ T.pack commonStuff
+      caixaSoma
 
       -- `prerender` and `prerender_` let you choose a widget to run on the server
       -- during prerendering and a different widget to run on the client with
