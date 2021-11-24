@@ -1,6 +1,6 @@
 {-# LANGUAGE DataKinds #-}
 {-# LANGUAGE OverloadedStrings #-}
-{-# LANGUAGE TypeApplications #-}
+{-# LANGUAGE TypeApplications, ScopedTypeVariables #-}
 
 module Frontend where
 
@@ -21,7 +21,26 @@ import Control.Monad.Fix
 import Common.Api
 import Common.Route
 
-data Pagina = Pagina0 | Pagina1 | Pagina2 | Pagina3
+data Pagina = Pagina0 | Pagina1 | Pagina2 | Pagina3 | Pagina4
+
+getPath :: T.Text
+getPath = renderBackendRoute checFullREnc $ BackendRoute_Cliente :/ ()
+
+nomeRequest :: T.Text -> XhrRequest T.Text
+nomeRequest s = postJson getPath (Cliente s)
+
+req :: ( DomBuilder t m
+      , Prerender js t m
+      ) => m ()
+req = do
+   inputEl <- inputElement def
+   (submitBtn,_) <- el' "button" (text "Inserir")
+   let click = domEvent Click submitBtn
+   let nm = tag (current $ _inputElement_value inputEl) click
+   _ :: Dynamic t (Event t (Maybe T.Text)) <- prerender
+      (pure never)
+      (fmap decodeXhrResponse <$> performRequestAsync (nomeRequest <$> nm))
+   return ()
 
 buttonClick :: (DomBuilder t m, PostBuild t m, MonadHold t m)
             => m (Event t T.Text)
@@ -84,8 +103,6 @@ caixaSoma = do
    n2 <- numberInput -- m (Dynamic t Double)
    dynText (fmap (T.pack . show) (zipDynWith (+) n1 n2))
    
-   
-   
               
 countClick :: DomBuilder t m => m (Event t Int)
 countClick = do
@@ -98,40 +115,36 @@ pagClick = do
    evt <- countClick
    st <- accumDyn (+) 0 evt
    el "div" (dynText (fmap (T.pack . show) st))
-   
-   
-      
 
 clickLi :: (DomBuilder t m, PostBuild t m, MonadHold t m) => Pagina -> T.Text -> m (Event t Pagina)
 clickLi p t = do
    (ev, _) <- el' "li" (elAttr "a" ("href" =: "#") (text t))
    return ((\_ -> p) <$> domEvent Click ev)
 
-menuLi :: (DomBuilder t m, PostBuild t m, MonadHold t m) => m (Dynamic t Pagina)
+menuLi :: (DomBuilder t m, PostBuild t m, MonadHold t m, Prerender js t m) => m (Dynamic t Pagina)
 menuLi = do
    evs <- el "ul" $ do
       p1 <- clickLi Pagina1 "1.Inversor de texto"
       p2 <- clickLi Pagina2 "2.Soma"
       p3 <- clickLi Pagina3 "3.Contador de cliques"
-      return (leftmost [p1,p2,p3])
+      p4 <- clickLi Pagina4 "4.Inserção ao db"
+      return (leftmost [p1,p2,p3, p4])
    holdDyn Pagina0 evs
 
-currPag :: (DomBuilder t m, MonadHold t m, PostBuild t m, MonadFix m)
-        => Pagina -> m ()
-currPag p =
+currPag :: (DomBuilder t m, MonadHold t m, PostBuild t m, MonadFix m, Prerender js t m) => Pagina -> m ()
+currPag p = do
    case p of
       Pagina0 -> blank
       Pagina1 -> bttnEvt
       Pagina2 -> sumEvt
       Pagina3 -> pagClick
+      Pagina4 -> req
 
-mainPag :: (DomBuilder t m, MonadHold t m, PostBuild t m, MonadFix m) => m ()
+mainPag :: (DomBuilder t m, MonadHold t m, PostBuild t m, MonadFix m, Prerender js t m) => m ()
 mainPag = do
    pag <- el "div" menuLi
    dyn_ $ currPag <$> pag
    
-   
-
 frontend :: Frontend (R FrontendRoute)
 frontend = Frontend
   { _frontend_head = do
@@ -140,13 +153,10 @@ frontend = Frontend
                          <> "type" =: "text/css" 
                          <> "rel" =: "stylesheet") blank
   , _frontend_body = do
-      el "h1" $ text "Trabalho P2 "
-      
-      
+      el "h1" $ text "Trabalho P2"
+     
       mainPag
       
-      
-      el "p" $ text $ T.pack commonStuff
       prerender_ blank $ liftJSM $ void $ eval ("console.log('Hello, World!')" :: T.Text)
       elAttr "img" ("src" =: static @"haskell.png") blank
       el "div" $ do
