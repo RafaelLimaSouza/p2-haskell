@@ -4,9 +4,18 @@ p {
 }
 
 h1 {
-    color: green;
+    color: blue;
+    font-weight:bold;
 }
 
 ul {
+    font-weight:bold;
+}
+div {
+    color:Green;
+    font-weight:bold;
+}
+button {
+    
     font-weight:bold;
 }
